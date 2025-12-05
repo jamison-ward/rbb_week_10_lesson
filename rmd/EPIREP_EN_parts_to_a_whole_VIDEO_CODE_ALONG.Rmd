@@ -14,7 +14,7 @@ editor_options:
   markdown:
     wrap: 100
   canonical: true
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ```{r, echo = F, message = F, warning = F}
@@ -111,7 +111,7 @@ tb_outcomes %>%
   # Pass the data to ggplot as a basis for creating the visualization
   ggplot(
     # Specify that the x and y axis variables 
-    aes(-------, -------)) + 
+    aes(x = outcome, y = cases)) + 
   #  geom_col() creates a bar plot
   geom_col() +
   labs(title = "Number of cases per treatment outcome")
@@ -123,7 +123,7 @@ tb_outcomes %>%
 ```{r}
 # Basic bar plot example 2: Case counts per hospital
 tb_outcomes %>% 
-  ggplot(aes(-------, -------)) + 
+  ggplot(aes(x = hospital, y = cases)) + 
   geom_col() +
   labs(title = "Number of Cases per Hospital")
 ```
@@ -136,11 +136,11 @@ tb_outcomes %>%
 tb_outcomes %>% 
   ggplot(aes(x = hospital, y = cases)) + 
   geom_col() +
-  labs(title = "Number of Cases per Hospital") 
+  labs(title = "Number of Cases per Hospital") +
   # new code line here:
-  -----------
+  coord_flip()
 ```
- 
+
 ### Stacked bar charts
 
 -   **Stacked Bar Charts**: Introduce a second categorical variable for deeper insight.
@@ -154,7 +154,7 @@ tb_outcomes %>%
     aes(x = hospital, 
         y = cases,
         # new code here
-        ----------)) + 
+        fill = outcome)) + 
   geom_col()
 ```
 
@@ -174,7 +174,7 @@ tb_outcomes %>%
         y = cases,
         fill = outcome)) +
   # Add position argument for side-by-side bars 
-  geom_col(-----------)
+  geom_col(position = "dodge")
 ```
 
 -   Grouped bar charts are not ideal when there are too many groups.
@@ -188,7 +188,7 @@ tb_outcomes %>%
     aes(x = hospital, 
         y = cases,
         # different variable here
-        --------------)) +
+        fill = diagnosis_type)) +
   geom_col(position = "dodge")
 ```
 
@@ -201,7 +201,7 @@ Write the adequate code that generates a basic bar chart of the number of `cases
 # PQ1 answer:
 tb_outcomes %>% 
   ggplot(
-    aes(_______, _______)) + 
+    aes(x = period_date, y = cases)) + 
   geom_col()
 ```
 
@@ -212,7 +212,7 @@ Create a stacked bar chart to display treatment outcomes over different time per
 ```{r}
 tb_outcomes %>% 
   ggplot(
-    aes(_______, _______, _______)) + 
+    aes(x = period_date, y = cases, fill = outcome)) + 
   geom_col()
 ```
 :::
@@ -230,10 +230,11 @@ First, let's create the necessary summary data since we need to have some kind o
 
 ```{r}
 hosp_dx_error <- tb_outcomes %>%  
-  group_by(-------, -------) %>% 
+  group_by(period_date, diagnosis_type) %>% 
   summarise(
-    total_cases = -------,
-    error = -------)
+    total_cases = sum(cases, na.rm = TRUE),
+    error = sd(cases, na.rm = TRUE)) %>% 
+  ungroup()
 
 hosp_dx_error
 ```
@@ -244,22 +245,21 @@ Now, let use this data to create the plot:
 # Recreate grouped bar chart and add error bars
 hosp_dx_error %>% 
   ggplot(
-    aes(x = -------,
-        y = -------,
-        fill = -------)) +
+    aes(x = period_date,
+        y = total_cases,
+        fill = diagnosis_type)) +
   geom_col(position = "dodge") +  # Dodge the bars
   #  geom_errorbar() adds error bars
   geom_errorbar(
     # Specify upper and lower limits of the error bars
-    aes(ymin = -------, ymax = -------),
+    aes(ymin = total_cases - error, ymax = total_cases + error),
     position = "dodge"  # Dodge the error bars to align them with side-by-side bars
   )
 ```
 
-
 ## Visualizing comparisons with normalized bar charts, pie charts, and donut charts
 
--   Leet's explore how compositions illustrate the contributions of individual parts to a whole.
+-   Let's explore how compositions illustrate the contributions of individual parts to a whole.
 -   Consider using dedicated composition chart types that better represent these relationships.
 -   We'll focus on part-to-whole charts to highlight how each piece fits into the overall picture.
 
@@ -297,7 +297,7 @@ tb_outcomes %>%
         y = cases,
         fill = outcome)) + 
   # Add position argument for normalized bars
-  geom_col(----------)
+  geom_col(position = "fill")
 ```
 
 -   All bars are now the same length, meaning all the wholes are now the same size. This now allows us to easily evaluate the contributions of the different parts to the whole.
@@ -310,9 +310,9 @@ tb_outcomes %>%
 
 ```{r}
 outcome_totals <- tb_outcomes %>% 
-  group_by(-------) %>% 
+  group_by(outcome) %>% 
   summarise(
-    total_cases = sum(-------, na.rm = T))
+    total_cases = sum(cases, na.rm = T))
 
 outcome_totals
 ```
@@ -322,9 +322,9 @@ A pie chart is basically a round version of a single 100% stacked bar.
 ```{r}
 # Single-bar chart (precursor to pie chart)
 ggplot(outcome_totals, 
-       aes(x = ------, # Set arbitrary x value
-           y = ------,
-           fill = ------)) +
+       aes(x = 4, # Set arbitrary x value
+           y = total_cases,
+           fill = outcome)) +
   geom_col()
 ```
 
@@ -335,11 +335,11 @@ ggplot(outcome_totals,
 ```{r}
 # Basic pie chart
 ggplot(outcome_totals, 
-       aes(x=4, 
-           y=total_cases, 
-           fill=outcome)) +
+       aes(x = 4, 
+           y = total_cases, 
+           fill = outcome)) +
   geom_col() +
-  ------------- # Change y axis to be circular
+  coord_polar(theta = 'y') # Change y axis to be circular
 ```
 
 ## Wrap Up!
