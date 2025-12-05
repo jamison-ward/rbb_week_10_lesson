@@ -1,0 +1,365 @@
+---
+title: '\ '
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: true
+    css: !expr here::here("global/style/style.css")
+    highlight: kate
+    pandoc_args: --shift-heading-level-by=-1
+  word_document:
+    toc: true
+editor_options:
+  markdown:
+    wrap: 100
+  canonical: true
+  chunk_output_type: inline
+---
+
+```{r, echo = F, message = F, warning = F}
+knitr::opts_chunk$set(class.source = "tgc-code-block")
+# Load packages 
+if(!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, knitr, here, reactable)
+
+# Source functions 
+source(here::here("global/functions/lesson_functions.R"))
+
+# knitr settings
+knitr::opts_chunk$set(warning = F, message = F, class.source = "tgc-code-block", error = T)
+```
+
+# Visualizing Comparisons and Compositions
+
+![Chart types covered in this lesson.](images/parts_to_whole_charts.jpg)
+
+## Learning objectives
+
+1)  Understand the difference between visualizing comparisons and visualizing compositions, and recall the appropriate chart types for these two types of analysis.
+2)  Create and customize bar charts using {ggplot2} for comparing categorical data, with `geom_col()`, `geom_errorbar()`, and `position` adjustments.
+3)  Create and customize pie charts using `coord_polar()` with `geom_col()`.
+
+## Load packages
+
+In this lesson we will use the following packages:
+
+-   `{tidyverse}` for data wrangling and data visualization
+
+-   `{here}` for project-relative file paths
+
+```{r}
+pacman::p_load("tidyverse", "here")
+```
+
+## Data: TB treatment outcomes in Benin
+
+-   **Public Health Data Analysis**: Compare subgroup metrics and understand data contributions.
+-   **Focus on Benin's TB Data**: Investigate WHO-provided sub-national TB data on [DHIS2 dashboard](https://tbhistoric.org/).
+-   **Data Composition**: Includes new and relapse TB `cases` started on treatment.
+-   **Disaggregation Categories**: Data broken down by time period, health facility, treatment outcome, and diagnosis type.
+
+Let's import the `tb_outcomes` data subset.
+
+```{r render = .reactable_10_rows, message = FALSE}
+# Import data from CSV
+tb_outcomes <- read_csv(here::here('data/benin_tb.csv'))
+
+# Print data frame
+tb_outcomes
+```
+
+Here are the detailed variable definitions for each column:
+
+1.  **Time Frame Tracking (`period` and `period_date`)**: Quarterly records from `2015Q1` to `2017Q4`.
+
+2.  **Health Facility Identifier (`hospital`)**:
+
+    -   Data from St Jean De Dieu, CHPP Akron, CS Abomey-Calavi, Hopital Bethesda, Hopital Savalou, Hopital St Luc.
+
+3.  **Treatment Outcome Categories (`outcome`)**:
+
+    -   `completed`: Treatment finished, outcome marked as completed.
+    -   `cured`: Treatment succeeded with sputum smear confirmation.
+    -   `died`: Patient succumbed to TB during treatment.
+    -   `failed`: Treatment did not succeed.
+    -   `unevaluated`: Treatment outcome not determined.
+
+4.  **Diagnosis Categorization (`diagnosis_type`)**:
+
+    -   `bacteriological`: Diagnosis confirmed by bacteriological tests.
+    -   `clinical`: Diagnosis based on clinical symptoms, sans bacteriological confirmation.
+
+5.  **Case Counts (`cases`)**: Quantifies the number of TB cases starting treatment.
+
+![](images/comparison_charts.jpg)
+
+### Bar charts
+
+-   **Bar Chart Advantages**: Ideal for displaying counts and making categorical comparisons.
+-   **Optimal Usage**:
+    -   Effective for ordinal categories or time-based data.
+    -   Best when data is grouped into distinct categories.
+-   **Comparison Tool**: Bar charts excellently illustrate comparisons among groups.
+-   **{ggplot2} Implementation**: Use `geom_col()` for plotting categorical against numerical data.
+
+Let's exemplify this by visualizing the *Number of cases per treatment outcomes* in the `tb_outcomes` dataset:
+
+```{r}
+# Basic bar plot example 1: Frequency of treatment outcomes
+tb_outcomes %>% 
+  # Pass the data to ggplot as a basis for creating the visualization
+  ggplot(
+    # Specify that the x and y axis variables 
+    aes(-------, -------)) + 
+  #  geom_col() creates a bar plot
+  geom_col() +
+  labs(title = "Number of cases per treatment outcome")
+```
+
+-   **Aggregation**: `geom_col()` sums up cases by outcomes, incorporating all periods, hospitals, and diagnosis types.
+-   **Flexible Axes**: Easily swap the x-axis variable to display other categorical data dimensions.
+
+```{r}
+# Basic bar plot example 2: Case counts per hospital
+tb_outcomes %>% 
+  ggplot(aes(-------, -------)) + 
+  geom_col() +
+  labs(title = "Number of Cases per Hospital")
+```
+
+-   **Horizontal Bar Plot Creation**: Use `coord_flip()` to transform a vertical bar chart into a horizontal layout.
+-   **Enhanced Category Visualization**: Horizontal orientation can improve readability of categories.
+
+```{r}
+# Basic bar plot example 3: Horizontal bars
+tb_outcomes %>% 
+  ggplot(aes(x = hospital, y = cases)) + 
+  geom_col() +
+  labs(title = "Number of Cases per Hospital") 
+  # new code line here:
+  -----------
+```
+ 
+### Stacked bar charts
+
+-   **Stacked Bar Charts**: Introduce a second categorical variable for deeper insight.
+-   **`ggplot()` Customization**: Use `fill` attribute to differentiate categories within the bars.
+
+```{r}
+# Stacked bar plot: 
+tb_outcomes %>% 
+  ggplot(
+    # Fill color of bars by the 'outcome' variable
+    aes(x = hospital, 
+        y = cases,
+        # new code here
+        ----------)) + 
+  geom_col()
+```
+
+-   **Stacked Plot Function**: Retain primary categories on the axis while displaying subgroup contributions.
+-   **Visual Segregation**: Differentiate subgroups within bars through color-coded segments.
+
+### Grouped bar charts
+
+-   Grouped bar plots provide a side-by-side representation of subgroups within each main category.
+-   We can set the `position` argument to `"dodge"` in `geom_col()` to display bars side by side:
+
+```{r}
+# Grouped bar plot: 
+tb_outcomes %>% 
+  ggplot(
+    aes(x = hospital, 
+        y = cases,
+        fill = outcome)) +
+  # Add position argument for side-by-side bars 
+  geom_col(-----------)
+```
+
+-   Grouped bar charts are not ideal when there are too many groups.
+-   We can try this again but with a different grouping variable that has fewer categories:
+
+```{r}
+# Grouped bar plot: split into 2 bars
+tb_outcomes %>% 
+  ggplot(
+    # Fill color of bars by the 'diagnosis_type' 
+    aes(x = hospital, 
+        y = cases,
+        # different variable here
+        --------------)) +
+  geom_col(position = "dodge")
+```
+
+::: practice
+**Question 1: Basic bar plot**
+
+Write the adequate code that generates a basic bar chart of the number of `cases` per quarter with `period_date` on the x axis
+
+```{r}
+# PQ1 answer:
+tb_outcomes %>% 
+  ggplot(
+    aes(_______, _______)) + 
+  geom_col()
+```
+
+**Question 2: Stacked bar plot**
+
+Create a stacked bar chart to display treatment outcomes over different time periods
+
+```{r}
+tb_outcomes %>% 
+  ggplot(
+    aes(_______, _______, _______)) + 
+  geom_col()
+```
+:::
+
+### Adding error bars
+
+-   Showcasing data variability or uncertainty is done effectively with **error bars**.
+-   Error bars help illustrate the **reliability of mean scores** or the precision of data points.
+-   In {ggplot2}, adding error bars is achieved with the `geom_errorbar()` function.
+-   The error range is typically defined by **standard deviation**, **standard error**, or **confidence intervals**.
+-   Essential summary statistics like **mean** and **standard deviation** are necessary for error bars and need to be calculated.
+-   By integrating error bars into our grouped bar plots, we gain a more nuanced understanding of the data.
+
+First, let's create the necessary summary data since we need to have some kind of error measurement. In our case we will compute the standard deviation:
+
+```{r}
+hosp_dx_error <- tb_outcomes %>%  
+  group_by(-------, -------) %>% 
+  summarise(
+    total_cases = -------,
+    error = -------)
+
+hosp_dx_error
+```
+
+Now, let use this data to create the plot:
+
+```{r}
+# Recreate grouped bar chart and add error bars
+hosp_dx_error %>% 
+  ggplot(
+    aes(x = -------,
+        y = -------,
+        fill = -------)) +
+  geom_col(position = "dodge") +  # Dodge the bars
+  #  geom_errorbar() adds error bars
+  geom_errorbar(
+    # Specify upper and lower limits of the error bars
+    aes(ymin = -------, ymax = -------),
+    position = "dodge"  # Dodge the error bars to align them with side-by-side bars
+  )
+```
+
+
+## Visualizing comparisons with normalized bar charts, pie charts, and donut charts
+
+-   Leet's explore how compositions illustrate the contributions of individual parts to a whole.
+-   Consider using dedicated composition chart types that better represent these relationships.
+-   We'll focus on part-to-whole charts to highlight how each piece fits into the overall picture.
+
+![](images/composition_charts.jpg)
+
+### Percent-stacked bar chart
+
+-   For showcasing compositions, we need to identify the parts and the whole they comprise.
+-   Stacked bar charts, previously discussed, serve as an acceptable starting point for visualizing these relationships.
+
+```{r}
+# Regular stacked bar plot
+tb_outcomes %>% 
+  ggplot(
+    aes(x = hospital, 
+        y = cases,
+        fill = outcome)) + 
+  geom_col()
+```
+
+-   They show us parts-of-wholes, but all the wholes are different sizes.
+-   The height of the bars represent the total number of cases, which is different at every location.
+-   Looking at the *relative* distribution of outcomes would be much easier if every bar were the same size.
+-   We can do this by creating a 100% stacked bar chart, where the total height of each bar is standardized to the same size, effectively showing proportions rather than counts or absolute values.
+
+![](images/stacked-bars.png)
+
+This is achieved by setting the `position` argument to `"fill"` in `geom_col()`.
+
+```{r}
+# Percent-stacked bar plot
+tb_outcomes %>% 
+  ggplot(
+    aes(x = hospital, 
+        y = cases,
+        fill = outcome)) + 
+  # Add position argument for normalized bars
+  geom_col(----------)
+```
+
+-   All bars are now the same length, meaning all the wholes are now the same size. This now allows us to easily evaluate the contributions of the different parts to the whole.
+
+### Circular plots: Pie charts
+
+-   Let's dive into circular data visualizations together, examining pie charts.
+-   We'll start by aggregating data to tally total counts for each treatment outcome category.
+-   This step ensures each segment of our dataset is clearly represented for visualization.
+
+```{r}
+outcome_totals <- tb_outcomes %>% 
+  group_by(-------) %>% 
+  summarise(
+    total_cases = sum(-------, na.rm = T))
+
+outcome_totals
+```
+
+A pie chart is basically a round version of a single 100% stacked bar.
+
+```{r}
+# Single-bar chart (precursor to pie chart)
+ggplot(outcome_totals, 
+       aes(x = ------, # Set arbitrary x value
+           y = ------,
+           fill = ------)) +
+  geom_col()
+```
+
+-   In ggplot2, we'll explore how `coord_*()` functions can change a plot's perspective, like tweaking aspect ratios or axis limits.
+-   We'll transform our plot from linear to polar coordinates using `coord_polar()`, which will shape our data into slices for a pie chart.
+-   By mapping the `y` aesthetic to angles (using the `theta` argument), we'll collaboratively create a visual that clearly displays the distribution of our categorical data.
+
+```{r}
+# Basic pie chart
+ggplot(outcome_totals, 
+       aes(x=4, 
+           y=total_cases, 
+           fill=outcome)) +
+  geom_col() +
+  ------------- # Change y axis to be circular
+```
+
+## Wrap Up!
+
+## Solutions {.unlisted .unnumbered}
+
+```{r}
+# PQ1 answer:
+tb_outcomes %>% 
+  ggplot(aes(x = period_date,
+             y = cases)) + 
+  geom_col()
+```
+
+```{r}
+# PQ2 answer:
+tb_outcomes %>% 
+  ggplot(
+    aes(x = period_date, 
+        y = cases,
+        fill = outcome)) + 
+  geom_col()
+```
