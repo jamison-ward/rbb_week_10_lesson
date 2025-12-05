@@ -6,6 +6,8 @@ output:
     toc: true
     css: !expr here::here("global/style/style.css")
     highlight: kate
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r include=FALSE, eval=FALSE}
@@ -19,7 +21,6 @@ See our video explanation if you are unsure how to use this code along document:
 
 For better clarity, we recommend viewing this document in VISUAL MODE.
 ```
-
 
 ```{r include = FALSE, warning = FALSE, message = FALSE}
 # Load packages 
@@ -51,7 +52,7 @@ By the end of this lesson, you will be able to:
 
 A boxplot consists of two parts: the **box** and the **whiskers**.
 
-![Boxplots visualize summary statistics of continuous data.](images/boxplot_anatomy.png){alt="Anatomy of a boxplot" width="757"} 
+![Anatomy of a boxplot](images/boxplot_anatomy.png){width="757"}
 
 ### Potential pitfalls
 
@@ -65,10 +66,8 @@ A boxplot consists of two parts: the **box** and the **whiskers**.
 
 ```{r}
 # Load packages
-
+pacman::p_load(tidyverse, here, gapminder)
 ```
-
-
 
 ## The `gapminder` dataset
 
@@ -76,10 +75,8 @@ We will visualize global health and economic data from the `gapminder` data fram
 
 ```{r}
 # View first few rows of the data
-head()
+head(gapminder)
 ```
-
-
 
 ::: recap
 Gapminder is a country-year dataset with information on 142 countries, divided in to 5 "continents".
@@ -90,8 +87,6 @@ summary(gapminder)
 ```
 :::
 
-
-
 ## Basic boxplots with `geom_boxplot()`
 
 ![](images/ggplot_boxplot_syntax.png){width="540"}
@@ -100,7 +95,9 @@ Let's start with a simple boxplot by mapping one numeric variable, life expectan
 
 ```{r}
 # Simple boxplot of lifeExp
-
+ggplot(data = gapminder,
+       mapping = aes(x = lifeExp)) +
+  geom_boxplot()
 ```
 
 Now we'll make a boxplot of `lifeExp` split by levels of `continent`.
@@ -108,7 +105,7 @@ Now we'll make a boxplot of `lifeExp` split by levels of `continent`.
 ```{r}
 # Simple boxplot of lifeExp by continent
 ggplot(data = gapminder,
-       mapping = aes(x = lifeExp)) +
+       mapping = aes(x = lifeExp, y = continent)) +
   geom_boxplot()
 
 ```
@@ -130,11 +127,10 @@ We can also change outline color and transparency of the boxes.
 ggplot(gapminder, 
        aes(x = continent,
            y = lifeExp,
-           fill = continent)) +
-  geom_boxplot()
+           fill = continent,
+           color = continent)) +
+  geom_boxplot(alpha = 0.6)
 ```
-
-
 
 ::: practice
 **Practice Questions**
@@ -145,13 +141,21 @@ Map the **fill color** of the boxes to `continent`, and set the **line width** t
 
 ```{r}
 # Write code to create your plot
-
+ggplot(data = gapminder,
+       mapping = aes(x = continent,
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1)
 ```
 
 ```{r}
 # When you think you have the right plot, submit your answer by replacing "YOUR ANSWER HERE" with your code, and run those lines.
 
-q1 <- "YOUR ANSWER HERE" 
+q1 <- ggplot(data = gapminder,
+       mapping = aes(x = continent,
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) 
 
 # Make sure that "q1" appears in your Environment tab.
 ```
@@ -177,7 +181,12 @@ Building on your code from the last question, add a **`scale_*()`** function tha
 
 ```{r}
 # Submit your answer:
-q2 <- "YOUR ANSWER HERE" 
+q2 <- ggplot(data = gapminder,
+       mapping = aes(x = continent,
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) +
+  scale_y_log10()
 
 # Check your answer:
 .CHECK_q2()
@@ -205,7 +214,7 @@ Here we will change the `x` argument to `reorder(continent, lifeExp)`.
 ```{r}
 # Arrange boxplots by mean life expectancy
 ggplot(gapminder, 
-       aes(x = continent,
+       aes(x = reorder(continent, lifeExp),
            y = lifeExp, 
            fill = continent,
            color = continent)) +
@@ -219,7 +228,7 @@ ggplot(gapminder,
 ```{r}
 # Arrange boxplots by median or max life expectancy
 ggplot(gapminder, 
-       aes(x = continent,
+       aes(x = reorder(continent, lifeExp, max),
            y = lifeExp, 
            fill = continent,
            color = continent)) +
@@ -233,7 +242,7 @@ ggplot(gapminder,
 ```{r}
 # Arrange boxplots by descending median life expectancy
 ggplot(gapminder, 
-       aes(x = reorder(continent, lifeExp),
+       aes(x = reorder(continent, -lifeExp, median),
            y = lifeExp, 
            fill = continent,
            color = continent)) +
@@ -249,11 +258,22 @@ Now, **reorder** the boxes by **mean** `gdpPercap`, in **descending** order.
 
 ```{r}
 # Write code to create your plot
+ggplot(data = gapminder,
+       mapping = aes(x = reorder(continent, -gdpPercap),
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) +
+  scale_y_log10()
 ```
 
 ```{r}
 # Submit your answer:
-q3 <- "YOUR ANSWER HERE"
+q3 <- ggplot(data = gapminder,
+       mapping = aes(x = reorder(continent, -gdpPercap),
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) +
+  scale_y_log10()
 
 # Check your answer:
 .CHECK_q3()
@@ -273,7 +293,15 @@ Building on the code from the previous question, add **labels** to your plot.
 
 ```{r eval = FALSE}
 # Submit your answer:
-q4 <- "YOUR ANSWER HERE"
+q4 <- ggplot(data = gapminder,
+       mapping = aes(x = reorder(continent, -gdpPercap),
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) +
+  scale_y_log10() +
+  labs(title = "Variation in GDP per capita across continents (1952-2007)",
+       x = "Continent",
+       y = "Income per person (USD)")
 
 # Check your answer:
 .CHECK_q4()
@@ -307,7 +335,8 @@ ggplot(gapminder,
            y = lifeExp, 
            fill = continent,
            color = continent)) +
-  geom_boxplot(alpha = 0.6)
+  geom_boxplot(alpha = 0.6) +
+  geom_point()
 ```
 
 The `geom_jitter()` function randomly "jitters" points horizontally.
@@ -319,7 +348,8 @@ ggplot(gapminder,
            y = lifeExp, 
            fill = continent,
            color = continent)) +
-  geom_boxplot(alpha = 0.6)
+  geom_boxplot(alpha = 0.6) +
+  geom_jitter()
 ```
 
 We can control the width of the jitter with the `width` argument.
@@ -332,9 +362,9 @@ ggplot(gapminder,
            fill = continent,
            color = continent)) +
   geom_boxplot(alpha = 0.6) +
-  geom_jitter()
+  geom_jitter(width = 0.2,
+              alpha = 0.5)
 ```
-
 
 ::: practice
 **Practice Questions**
@@ -343,7 +373,16 @@ ggplot(gapminder,
 
 ```{r}
 # Submit and check your answer:
-q5 <- "YOUR ANSWER HERE" 
+q5 <- ggplot(data = gapminder,
+       mapping = aes(x = reorder(continent, -gdpPercap),
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) +
+  geom_jitter() +
+  scale_y_log10() +
+  labs(title = "Variation in GDP per capita across continents (1952-2007)",
+       x = "Continent",
+       y = "Income per person (USD)")
 
 .CHECK_q5()
 
@@ -356,7 +395,17 @@ q5 <- "YOUR ANSWER HERE"
 
 ```{r}
 # Submit and check your answer:
-q6 <- "YOUR ANSWER HERE" 
+q6 <- ggplot(data = gapminder,
+       mapping = aes(x = reorder(continent, -gdpPercap),
+                     y = gdpPercap,
+                     fill = continent)) +
+  geom_boxplot(linewidth = 1) +
+  geom_jitter(width = 0.3,
+              alpha = 0.45) +
+  scale_y_log10() +
+  labs(title = "Variation in GDP per capita across continents (1952-2007)",
+       x = "Continent",
+       y = "Income per person (USD)") 
   
 .CHECK_q6()
 
@@ -365,7 +414,6 @@ q6 <- "YOUR ANSWER HERE"
 
 ```
 :::
-
 
 ::: challenge
 **Adding means to a boxplot**
@@ -381,10 +429,14 @@ ggplot(gapminder,
            y = lifeExp, 
            fill = continent,
            color = continent)) +
-  geom_boxplot(alpha = 0.6)
+  geom_boxplot(alpha = 0.6) +
+  stat_summary(fun = "mean",
+               geom = "point",
+               size = 3,
+               shape = 23,
+               fill = "white")
 ```
 :::
-
 
 ## Learning Outcomes
 
